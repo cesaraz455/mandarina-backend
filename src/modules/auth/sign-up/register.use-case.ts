@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RegisterDto } from '../dto/register.dto';
+import { RegisterDto } from './register.dto';
 import { UsersService } from '../../users/users.service';
 import { OtpService } from '../../otp/otp.service';
 import { EmailService } from '../../email/email.service';

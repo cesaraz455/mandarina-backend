@@ -3,15 +3,16 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { RegisterUseCase } from './use-cases/register.use-case';
-import { VerifyEmailUseCase } from './use-cases/verify-email.use-case';
-import { LoginUseCase } from './use-cases/login.use-case';
-import { RefreshTokenUseCase } from './use-cases/refresh-token.use-case';
-import { LogoutUseCase } from './use-cases/logout.use-case';
-import { ForgotPasswordUseCase } from './use-cases/forgot-password.use-case';
-import { ResetPasswordUseCase } from './use-cases/reset-password.use-case';
+import { JwtStrategy } from './jwt.strategy';
+import { JwtRefreshStrategy } from './jwt-refresh.strategy';
+import { RegisterUseCase } from './sign-up/register.use-case';
+import { VerifyEmailUseCase } from './otp-confirmation/verify-email.use-case';
+import { LoginUseCase } from './login/login.use-case';
+import { RefreshTokenUseCase } from './login/refresh-token.use-case';
+import { LogoutUseCase } from './login/logout.use-case';
+import { ForgotPasswordUseCase } from './forgot-password/forgot-password.use-case';
+import { ResetPasswordUseCase } from './new-password/reset-password.use-case';
+import { ResendVerificationUseCase } from './resend-verification/resend-verification.use-case';
 import { UsersModule } from '../users/users.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { OtpModule } from '../otp/otp.module';
@@ -47,6 +48,7 @@ import { EmailModule } from '../email/email.module';
     LogoutUseCase,
     ForgotPasswordUseCase,
     ResetPasswordUseCase,
+    ResendVerificationUseCase,
   ],
 })
 export class AuthModule {}

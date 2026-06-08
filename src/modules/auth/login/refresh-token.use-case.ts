@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { SessionsService } from '../../sessions/sessions.service';
 import { UsersService } from '../../users/users.service';
 import { CryptoUtil } from '../../../common/utils/crypto.util';
-import { AuthTokens } from '../interfaces/auth-tokens.interface';
+import { AuthTokens } from '../auth-tokens.interface';
 import {
   InvalidRefreshTokenException,
   SessionExpiredException,

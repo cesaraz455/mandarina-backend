@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OtpType } from '@prisma/client';
-import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { ResetPasswordDto } from './reset-password.dto';
 import { UsersService } from '../../users/users.service';
 import { OtpService } from '../../otp/otp.service';
 import { SessionsService } from '../../sessions/sessions.service';

@@ -18,22 +18,23 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { VerifyEmailDto } from './dto/verify-email.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { RegisterDto } from './sign-up/register.dto';
+import { LoginDto } from './login/login.dto';
+import { VerifyEmailDto } from './otp-confirmation/verify-email.dto';
+import { RefreshTokenDto } from './login/refresh-token.dto';
+import { ForgotPasswordDto } from './forgot-password/forgot-password.dto';
+import { ResetPasswordDto } from './new-password/reset-password.dto';
+import { ResendVerificationDto } from './resend-verification/resend-verification.dto';
 import {
   AuthResponseDto,
   MessageResponseDto,
   TokensResponseDto,
   UserProfileDto,
-} from './dto/auth-response.dto';
+} from './auth-response.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
-import { JwtAccessPayload, JwtRefreshPayload } from './interfaces/jwt-payload.interface';
+import { JwtAccessPayload, JwtRefreshPayload } from './jwt-payload.interface';
 import { UsersService } from '../users/users.service';
 
 @ApiTags('Authentication')
@@ -116,7 +117,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Revoke the current session' })
   @ApiResponse({ status: 200, type: MessageResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -153,10 +154,23 @@ export class AuthController {
     return this.authService.resetPassword(dto);
   }
 
+  // ─── Resend Verification ─────────────────────────────────────────────────
+
+  @Public()
+  @Post('resend-verification')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Resend email verification OTP' })
+  @ApiResponse({ status: 200, type: MessageResponseDto })
+  @ApiResponse({ status: 400, description: 'A verification code is still active' })
+  resendVerification(@Body() dto: ResendVerificationDto): Promise<MessageResponseDto> {
+    return this.authService.resendVerification(dto);
+  }
+
   // ─── Me ───────────────────────────────────────────────────────────────────
 
   @Get('me')
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get current authenticated user profile' })
   @ApiResponse({ status: 200, type: UserProfileDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

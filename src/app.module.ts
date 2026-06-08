@@ -22,7 +22,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
       load: [configuration],
       validationSchema: envValidationSchema,
       validationOptions: {
-        allowUnknown: false,
+        allowUnknown: true,
         abortEarly: false,
       },
     }),

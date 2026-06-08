@@ -12,6 +12,7 @@ interface ErrorResponse {
   statusCode: number;
   message: string | string[];
   error: string;
+  code?: string;
   timestamp: string;
   path: string;
 }
@@ -27,16 +28,23 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
 
     const exceptionResponse = exception.getResponse();
+    const isObject = typeof exceptionResponse === 'object';
+
     const message =
-      typeof exceptionResponse === 'object' &&
-      'message' in (exceptionResponse as object)
+      isObject && 'message' in (exceptionResponse as object)
         ? (exceptionResponse as { message: string | string[] }).message
         : exception.message;
+
+    const code =
+      isObject && 'code' in (exceptionResponse as object)
+        ? (exceptionResponse as { code: string }).code
+        : undefined;
 
     const errorBody: ErrorResponse = {
       statusCode: status,
       message,
       error: HttpStatus[status] ?? 'Error',
+      ...(code ? { code } : {}),
       timestamp: new Date().toISOString(),
       path: request.url,
     };

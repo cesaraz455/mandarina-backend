@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { OtpType } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-import { LoginDto } from '../dto/login.dto';
+import { LoginDto } from './login.dto';
 import { UsersService } from '../../users/users.service';
 import { SessionsService } from '../../sessions/sessions.service';
+import { OtpService } from '../../otp/otp.service';
+import { EmailService } from '../../email/email.service';
 import { CryptoUtil } from '../../../common/utils/crypto.util';
 import { PublicUserProfile } from '../../users/entities/user.entity';
 import {
@@ -21,9 +24,13 @@ export interface LoginResult {
 
 @Injectable()
 export class LoginUseCase {
+  private readonly logger = new Logger(LoginUseCase.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly sessionsService: SessionsService,
+    private readonly otpService: OtpService,
+    private readonly emailService: EmailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
@@ -59,6 +66,12 @@ export class LoginUseCase {
     }
 
     if (!user.isEmailVerified) {
+      const otp = await this.otpService.createOtp(user.id, OtpType.EMAIL_VERIFICATION);
+      try {
+        await this.emailService.sendEmailVerification(user.email, otp);
+      } catch (error) {
+        this.logger.error(`Failed to send verification email to ${user.email}`, error);
+      }
       throw new EmailNotVerifiedException();
     }
 

@@ -1,17 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { RegisterUseCase } from './use-cases/register.use-case';
-import { VerifyEmailUseCase } from './use-cases/verify-email.use-case';
-import { LoginUseCase } from './use-cases/login.use-case';
-import { RefreshTokenUseCase } from './use-cases/refresh-token.use-case';
-import { LogoutUseCase } from './use-cases/logout.use-case';
-import { ForgotPasswordUseCase } from './use-cases/forgot-password.use-case';
-import { ResetPasswordUseCase } from './use-cases/reset-password.use-case';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { VerifyEmailDto } from './dto/verify-email.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { RegisterUseCase } from './sign-up/register.use-case';
+import { VerifyEmailUseCase } from './otp-confirmation/verify-email.use-case';
+import { LoginUseCase } from './login/login.use-case';
+import { RefreshTokenUseCase } from './login/refresh-token.use-case';
+import { LogoutUseCase } from './login/logout.use-case';
+import { ForgotPasswordUseCase } from './forgot-password/forgot-password.use-case';
+import { ResetPasswordUseCase } from './new-password/reset-password.use-case';
+import { ResendVerificationUseCase } from './resend-verification/resend-verification.use-case';
+import { RegisterDto } from './sign-up/register.dto';
+import { LoginDto } from './login/login.dto';
+import { VerifyEmailDto } from './otp-confirmation/verify-email.dto';
+import { RefreshTokenDto } from './login/refresh-token.dto';
+import { ForgotPasswordDto } from './forgot-password/forgot-password.dto';
+import { ResetPasswordDto } from './new-password/reset-password.dto';
+import { ResendVerificationDto } from './resend-verification/resend-verification.dto';
 
 /**
  * AuthService acts as a facade over the use-case layer.
@@ -30,6 +32,7 @@ export class AuthService {
     private readonly logoutUseCase: LogoutUseCase,
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
+    private readonly resendVerificationUseCase: ResendVerificationUseCase,
   ) {}
 
   register(dto: RegisterDto) {
@@ -62,5 +65,9 @@ export class AuthService {
 
   resetPassword(dto: ResetPasswordDto) {
     return this.resetPasswordUseCase.execute(dto);
+  }
+
+  resendVerification(dto: ResendVerificationDto) {
+    return this.resendVerificationUseCase.execute(dto);
   }
 }

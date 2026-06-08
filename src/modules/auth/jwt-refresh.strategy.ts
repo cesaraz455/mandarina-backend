@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
-import { JwtRefreshPayload } from '../interfaces/jwt-payload.interface';
+import { JwtRefreshPayload } from './jwt-payload.interface';
 
 /**
  * JWT strategy for refresh token validation.

@@ -44,6 +44,11 @@ export class OtpService {
     return otp;
   }
 
+  async hasPendingOtp(userId: string, type: OtpType): Promise<boolean> {
+    const otp = await this.otpRepository.findLatestAvailable(userId, type);
+    return otp !== null;
+  }
+
   /**
    * Validates an OTP. Throws descriptive exceptions on failure.
    * Marks the OTP as used on success.

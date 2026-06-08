@@ -32,7 +32,16 @@ export class AccountNotActiveException extends ForbiddenException {
 
 export class EmailNotVerifiedException extends ForbiddenException {
   constructor() {
-    super('Please verify your email address before logging in');
+    super({
+      message: 'Please verify your email address before logging in',
+      code: 'EMAIL_NOT_VERIFIED',
+    });
+  }
+}
+
+export class PendingOtpException extends BadRequestException {
+  constructor() {
+    super('A verification code was already sent. Please check your email or wait for it to expire before requesting a new one');
   }
 }
 

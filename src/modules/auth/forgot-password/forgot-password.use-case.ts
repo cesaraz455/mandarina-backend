@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { OtpType } from '@prisma/client';
-import { ForgotPasswordDto } from '../dto/forgot-password.dto';
+import { ForgotPasswordDto } from './forgot-password.dto';
 import { UsersService } from '../../users/users.service';
 import { OtpService } from '../../otp/otp.service';
 import { EmailService } from '../../email/email.service';

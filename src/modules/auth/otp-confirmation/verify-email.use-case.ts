@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OtpType } from '@prisma/client';
-import { VerifyEmailDto } from '../dto/verify-email.dto';
+import { VerifyEmailDto } from './verify-email.dto';
 import { UsersService } from '../../users/users.service';
 import { OtpService } from '../../otp/otp.service';
 import {
