@@ -45,7 +45,7 @@ export class RegisterUseCase {
       OtpType.EMAIL_VERIFICATION,
     );
 
-    // 5. Send verification email (best-effort — log on failure, don't fail registration)
+    // 5. Send verification email (best-effort: log on failure, don't fail registration)
     try {
       await this.emailService.sendEmailVerification(user.email, otp);
     } catch (error) {

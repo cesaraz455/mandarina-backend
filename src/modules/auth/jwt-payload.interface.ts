@@ -1,13 +1,13 @@
 /**
  * Payload for JWT access tokens.
- * Keep minimal — this is serialized into every request.
+ * Keep minimal: this is serialized into every request.
  */
 export interface JwtAccessPayload {
   /** User ID (subject) */
   sub: string;
   /** User email */
   email: string;
-  /** Session ID — used for logout */
+  /** Session ID: used for logout */
   sid: string;
 }
 
@@ -17,6 +17,6 @@ export interface JwtAccessPayload {
 export interface JwtRefreshPayload {
   /** User ID (subject) */
   sub: string;
-  /** Session ID — used to look up and rotate the session */
+  /** Session ID: used to look up and rotate the session */
   sid: string;
 }

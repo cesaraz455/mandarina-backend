@@ -40,15 +40,15 @@ export class LoginUseCase {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<LoginResult> {
-    // 1. Resolve user — use identical exception for missing/wrong password (no enumeration)
+    // 1. Resolve user: use identical exception for missing/wrong password (no enumeration)
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
       throw new InvalidCredentialsException();
     }
 
-    // 2. Verify password — run even if no hash to keep constant-time behaviour
+    // 2. Verify password: run even if no hash to keep constant-time behaviour
     if (!user.passwordHash) {
-      // OAuth-only account — no local password
+      // OAuth-only account: no local password
       throw new InvalidCredentialsException();
     }
 
@@ -108,7 +108,7 @@ export class LoginUseCase {
       expiresAt,
     });
 
-    // 7. Track last login (fire-and-forget — non-critical)
+    // 7. Track last login (fire-and-forget: non-critical)
     await this.usersService.update(user.id, { lastLoginAt: new Date() });
 
     return {

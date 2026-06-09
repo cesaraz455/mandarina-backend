@@ -25,7 +25,7 @@ export class ResetPasswordUseCase {
     const user = await this.usersService.findByEmail(dto.email);
 
     if (!user) {
-      // Prevent enumeration — throw same OTP exception
+      // Prevent enumeration: throw same OTP exception
       throw new InvalidOrExpiredOtpException();
     }
 

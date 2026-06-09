@@ -17,7 +17,7 @@ export class EmailService {
   }
 
   /**
-   * Core send method — all outgoing emails funnel through here.
+   * Core send method: all outgoing emails funnel through here.
    * Throws InternalServerErrorException on Resend API errors so callers
    * can handle or suppress as needed.
    */

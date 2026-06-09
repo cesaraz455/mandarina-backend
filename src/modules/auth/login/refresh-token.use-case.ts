@@ -39,7 +39,7 @@ export class RefreshTokenUseCase {
     }
 
     if (session.isRevoked) {
-      // Possible token reuse attack — revoke all sessions for this user
+      // Possible token reuse attack: revoke all sessions for this user
       await this.sessionsService.revokeAllForUser(userId);
       throw new SessionRevokedException();
     }
@@ -52,7 +52,7 @@ export class RefreshTokenUseCase {
     // 2. Verify token hash matches what's stored
     const incomingHash = CryptoUtil.hashToken(rawRefreshToken);
     if (incomingHash !== session.refreshTokenHash) {
-      // Token mismatch — possible reuse of rotated token; revoke all
+      // Token mismatch: possible reuse of rotated token; revoke all
       await this.sessionsService.revokeAllForUser(userId);
       throw new InvalidRefreshTokenException();
     }

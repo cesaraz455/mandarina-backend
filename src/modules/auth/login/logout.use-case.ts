@@ -12,7 +12,7 @@ export class LogoutUseCase {
   async execute(sessionId: string): Promise<LogoutResult> {
     const session = await this.sessionsService.findById(sessionId);
 
-    // Idempotent — if already revoked or not found, still return success
+    // Idempotent: if already revoked or not found, still return success
     if (session && !session.isRevoked) {
       await this.sessionsService.revoke(sessionId);
     }

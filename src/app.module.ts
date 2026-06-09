@@ -16,7 +16,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 @Module({
   imports: [
-    // Configuration — global so all modules can inject ConfigService
+    // Configuration: global so all modules can inject ConfigService
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
@@ -27,7 +27,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
       },
     }),
 
-    // Rate limiting — global guard applied below
+    // Rate limiting: global guard applied below
     ThrottlerModule.forRoot([
       {
         ttl: 60000,  // 1 minute
@@ -61,7 +61,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
     },
-    // Global validation pipe — ensures all DTOs are validated before handlers run
+    // Global validation pipe: ensures all DTOs are validated before handlers run
     {
       provide: APP_PIPE,
       useValue: new ValidationPipe({

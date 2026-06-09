@@ -3,10 +3,7 @@ import { OtpType } from '@prisma/client';
 import { VerifyEmailDto } from './verify-email.dto';
 import { UsersService } from '../../users/users.service';
 import { OtpService } from '../../otp/otp.service';
-import {
-  InvalidOrExpiredOtpException,
-  UserNotFoundException,
-} from '../../../common/exceptions/auth.exceptions';
+import { InvalidOrExpiredOtpException } from '../../../common/exceptions/auth.exceptions';
 
 export interface VerifyEmailResult {
   message: string;

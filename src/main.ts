@@ -1,4 +1,4 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -16,13 +16,13 @@ async function bootstrap(): Promise<void> {
   // Global prefix
   app.setGlobalPrefix('api/v1');
 
-  // CORS — configure allowed origins for production
+  // CORS: configure allowed origins for production
   app.enableCors({
     origin: nodeEnv === 'production' ? false : true,
     credentials: true,
   });
 
-  // Swagger — only in non-production environments
+  // Swagger: only in non-production environments
   if (nodeEnv !== 'production') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle(appName)
