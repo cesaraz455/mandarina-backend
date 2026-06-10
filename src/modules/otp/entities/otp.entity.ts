@@ -3,14 +3,14 @@ import { OtpType } from '@prisma/client';
 export { OtpType };
 
 export class OtpEntity {
-  readonly id: string;
-  readonly userId: string;
-  readonly type: OtpType;
-  readonly otpHash: string;
-  readonly attemptsCount: number;
-  readonly expiresAt: Date;
-  readonly usedAt: Date | null;
-  readonly createdAt: Date;
+  readonly id!: string;
+  readonly userId!: string;
+  readonly type!: OtpType;
+  readonly otpHash!: string;
+  readonly attemptsCount!: number;
+  readonly expiresAt!: Date;
+  readonly usedAt!: Date | null;
+  readonly createdAt!: Date;
 
   constructor(data: {
     id: string;

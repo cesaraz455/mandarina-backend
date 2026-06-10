@@ -1,13 +1,13 @@
 export class SessionEntity {
-  readonly id: string;
-  readonly userId: string;
-  readonly refreshTokenHash: string;
-  readonly ipAddress: string | null;
-  readonly userAgent: string | null;
-  readonly isRevoked: boolean;
-  readonly revokedAt: Date | null;
-  readonly expiresAt: Date;
-  readonly createdAt: Date;
+  readonly id!: string;
+  readonly userId!: string;
+  readonly refreshTokenHash!: string;
+  readonly ipAddress!: string | null;
+  readonly userAgent!: string | null;
+  readonly isRevoked!: boolean;
+  readonly revokedAt!: Date | null;
+  readonly expiresAt!: Date;
+  readonly createdAt!: Date;
 
   constructor(data: {
     id: string;

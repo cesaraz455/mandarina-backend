@@ -17,11 +17,8 @@ export class OtpService {
     private readonly otpRepository: OtpRepository,
     private readonly configService: ConfigService,
   ) {
-    this.expiresInMinutes = this.configService.get<number>(
-      'otp.expiresInMinutes',
-      10,
-    );
-    this.maxAttempts = this.configService.get<number>('otp.maxAttempts', 3);
+    this.expiresInMinutes = this.configService.getOrThrow<number>('otp.expiresInMinutes');
+    this.maxAttempts = this.configService.getOrThrow<number>('otp.maxAttempts');
   }
 
   /**

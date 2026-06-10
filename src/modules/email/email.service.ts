@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { Inject, Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
@@ -8,12 +10,24 @@ import { SendEmailOptions } from './interfaces/email-options.interface';
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private readonly from: string;
+  private readonly otpExpiresInMinutes: number;
+  private readonly verificationTemplate: string;
+  private readonly passwordResetTemplate: string;
 
   constructor(
     @Inject(RESEND_CLIENT) private readonly resend: Resend,
     private readonly configService: ConfigService,
   ) {
     this.from = this.configService.getOrThrow<string>('email.from');
+    this.otpExpiresInMinutes = this.configService.getOrThrow<number>('otp.expiresInMinutes');
+    this.verificationTemplate = readFileSync(
+      join(__dirname, 'templates', 'email-verification.html'),
+      'utf8',
+    );
+    this.passwordResetTemplate = readFileSync(
+      join(__dirname, 'templates', 'password-reset.html'),
+      'utf8',
+    );
   }
 
   /**
@@ -43,56 +57,22 @@ export class EmailService {
   async sendEmailVerification(to: string, otp: string): Promise<void> {
     await this.send({
       to,
-      subject: 'Verify your Mandarina account',
-      text: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you did not create a Mandarina account, you can safely ignore this email.`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                    max-width: 480px; margin: 0 auto; padding: 24px; color: #1a1a1a;">
-          <h2 style="margin: 0 0 16px; font-size: 22px;">Verify your email</h2>
-          <p style="margin: 0 0 24px; color: #444;">
-            Use the following code to verify your Mandarina account:
-          </p>
-          <div style="font-size: 40px; font-weight: 700; letter-spacing: 10px;
-                      text-align: center; padding: 24px 16px;
-                      background: #f4f4f5; border-radius: 12px; margin-bottom: 24px;">
-            ${otp}
-          </div>
-          <p style="margin: 0 0 8px; color: #666; font-size: 14px;">
-            This code expires in <strong>10 minutes</strong>.
-          </p>
-          <p style="margin: 0; color: #999; font-size: 12px;">
-            If you did not create a Mandarina account, you can safely ignore this email.
-          </p>
-        </div>
-      `,
+      subject: 'Verifica tu cuenta de Mandarina',
+      text: `Tu codigo de verificacion es: ${otp}\n\nEste codigo expira en ${this.otpExpiresInMinutes} minutos.\n\nSi no creaste una cuenta en Mandarina, puedes ignorar este correo.`,
+      html: this.verificationTemplate
+        .replace('{{OTP}}', otp)
+        .replace('{{EXPIRES_IN}}', String(this.otpExpiresInMinutes)),
     });
   }
 
   async sendPasswordReset(to: string, otp: string): Promise<void> {
     await this.send({
       to,
-      subject: 'Reset your Mandarina password',
-      text: `Your password reset code is: ${otp}\n\nThis code expires in 10 minutes.\n\nIf you did not request this, please secure your account immediately.`,
-      html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                    max-width: 480px; margin: 0 auto; padding: 24px; color: #1a1a1a;">
-          <h2 style="margin: 0 0 16px; font-size: 22px;">Reset your password</h2>
-          <p style="margin: 0 0 24px; color: #444;">
-            Use the following code to reset your Mandarina password:
-          </p>
-          <div style="font-size: 40px; font-weight: 700; letter-spacing: 10px;
-                      text-align: center; padding: 24px 16px;
-                      background: #f4f4f5; border-radius: 12px; margin-bottom: 24px;">
-            ${otp}
-          </div>
-          <p style="margin: 0 0 8px; color: #666; font-size: 14px;">
-            This code expires in <strong>10 minutes</strong>.
-          </p>
-          <p style="margin: 0; color: #d00; font-size: 12px;">
-            If you did not request a password reset, please secure your account immediately.
-          </p>
-        </div>
-      `,
+      subject: 'Recupera tu contraseña de Mandarina',
+      text: `Tu codigo de recuperacion es: ${otp}\n\nEste codigo expira en ${this.otpExpiresInMinutes} minutos.\n\nSi no solicitaste recuperar tu contraseña, asegura tu cuenta de inmediato.`,
+      html: this.passwordResetTemplate
+        .replace('{{OTP}}', otp)
+        .replace('{{EXPIRES_IN}}', String(this.otpExpiresInMinutes)),
     });
   }
 }

@@ -6,18 +6,18 @@
  * enforce invariants, and swap ORMs without touching business logic.
  */
 export class UserEntity {
-  readonly id: string;
-  readonly email: string;
-  readonly passwordHash: string | null;
-  readonly firstName: string | null;
-  readonly lastName: string | null;
-  readonly profilePictureUrl: string | null;
-  readonly isEmailVerified: boolean;
-  readonly isActive: boolean;
-  readonly lastLoginAt: Date | null;
-  readonly emailVerifiedAt: Date | null;
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
+  readonly id!: string;
+  readonly email!: string;
+  readonly passwordHash!: string | null;
+  readonly firstName!: string | null;
+  readonly lastName!: string | null;
+  readonly profilePictureUrl!: string | null;
+  readonly isEmailVerified!: boolean;
+  readonly isActive!: boolean;
+  readonly lastLoginAt!: Date | null;
+  readonly emailVerifiedAt!: Date | null;
+  readonly createdAt!: Date;
+  readonly updatedAt!: Date;
 
   constructor(data: {
     id: string;
