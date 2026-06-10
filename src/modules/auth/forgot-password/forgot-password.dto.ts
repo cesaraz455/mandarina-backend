@@ -8,5 +8,5 @@ export class ForgotPasswordDto {
   @IsNotEmpty()
   @MaxLength(255)
   @Transform(({ value }: { value: string }) => value?.toLowerCase().trim())
-  email: string;
+  email!: string;
 }

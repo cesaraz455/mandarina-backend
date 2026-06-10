@@ -10,7 +10,6 @@ import { ResendVerificationUseCase } from './resend-verification/resend-verifica
 import { RegisterDto } from './sign-up/register.dto';
 import { LoginDto } from './login/login.dto';
 import { VerifyEmailDto } from './otp-confirmation/verify-email.dto';
-import { RefreshTokenDto } from './login/refresh-token.dto';
 import { ForgotPasswordDto } from './forgot-password/forgot-password.dto';
 import { ResetPasswordDto } from './new-password/reset-password.dto';
 import { ResendVerificationDto } from './resend-verification/resend-verification.dto';

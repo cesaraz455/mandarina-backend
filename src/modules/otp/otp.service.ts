@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OtpType } from '@prisma/client';
-import { OtpEntity } from './entities/otp.entity';
 import { OtpRepository } from './repositories/otp.repository';
 import { CryptoUtil } from '../../common/utils/crypto.util';
 import {

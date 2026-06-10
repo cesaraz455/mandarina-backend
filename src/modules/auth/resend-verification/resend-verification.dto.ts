@@ -4,5 +4,5 @@ import { IsEmail } from 'class-validator';
 export class ResendVerificationDto {
   @ApiProperty({ example: 'user@example.com' })
   @IsEmail()
-  email: string;
+  email!: string;
 }

@@ -16,7 +16,7 @@ export class RegisterDto {
   @IsNotEmpty()
   @MaxLength(255)
   @Transform(({ value }: { value: string }) => value?.toLowerCase().trim())
-  email: string;
+  email!: string;
 
   @ApiProperty({
     example: 'SecureP@ssw0rd',
@@ -34,7 +34,7 @@ export class RegisterDto {
         'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
     },
   )
-  password: string;
+  password!: string;
 
   @ApiPropertyOptional({ example: 'John' })
   @IsOptional()

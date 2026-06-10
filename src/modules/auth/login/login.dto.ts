@@ -13,11 +13,11 @@ export class LoginDto {
   @IsNotEmpty()
   @MaxLength(255)
   @Transform(({ value }: { value: string }) => value?.toLowerCase().trim())
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'SecureP@ssw0rd' })
   @IsString()
   @IsNotEmpty()
   @MaxLength(128)
-  password: string;
+  password!: string;
 }

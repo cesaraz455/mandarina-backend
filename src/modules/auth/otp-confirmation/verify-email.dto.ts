@@ -14,11 +14,11 @@ export class VerifyEmailDto {
   @IsNotEmpty()
   @MaxLength(255)
   @Transform(({ value }: { value: string }) => value?.toLowerCase().trim())
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: '123456', description: '6-digit verification code' })
   @IsString()
   @IsNotEmpty()
   @Length(6, 6, { message: 'OTP must be exactly 6 digits' })
-  otp: string;
+  otp!: string;
 }
