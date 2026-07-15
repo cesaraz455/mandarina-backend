@@ -5,6 +5,7 @@ export const envValidationSchema = Joi.object({
     .valid('development', 'production', 'test')
     .default('development'),
   PORT: Joi.number().default(3000),
+  APP_NAME: Joi.string().default('Mandarina Auth'),
 
   DATABASE_URL: Joi.string().uri().required(),
 
@@ -15,6 +16,7 @@ export const envValidationSchema = Joi.object({
 
   OTP_EXPIRES_IN_MINUTES: Joi.number().default(10),
   OTP_MAX_ATTEMPTS: Joi.number().default(3),
+  OTP_RESEND_COOLDOWN_SECONDS: Joi.number().default(60),
 
   SESSION_EXPIRES_IN_DAYS: Joi.number().default(30),
 

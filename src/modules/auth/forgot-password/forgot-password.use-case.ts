@@ -25,7 +25,8 @@ export class ForgotPasswordUseCase {
   ) {}
 
   async execute(dto: ForgotPasswordDto): Promise<ForgotPasswordResult> {
-    const GENERIC_MESSAGE = 'If an account with that email exists, you will receive a password reset code shortly.';
+    const GENERIC_MESSAGE =
+      'If an account with that email exists, you will receive a password reset code shortly.';
 
     const user = await this.usersService.findByEmail(dto.email);
 

@@ -1,7 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
@@ -20,4 +22,14 @@ export class LoginDto {
   @IsNotEmpty()
   @MaxLength(128)
   password!: string;
+
+  @ApiPropertyOptional({
+    example: true,
+    description:
+      'Keep the session across browser restarts (persistent refresh cookie). ' +
+      'When false or omitted, the refresh cookie is a session cookie.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  rememberMe?: boolean;
 }

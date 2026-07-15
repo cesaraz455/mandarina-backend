@@ -82,7 +82,10 @@ export class RefreshTokenUseCase {
       { sub: user.id, sid: newSessionId },
       {
         secret: this.configService.getOrThrow<string>('jwt.refreshSecret'),
-        expiresIn: this.configService.get<string>('jwt.refreshExpiresIn', '30d'),
+        expiresIn: this.configService.get<string>(
+          'jwt.refreshExpiresIn',
+          '30d',
+        ),
       },
     );
 

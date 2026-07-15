@@ -39,9 +39,12 @@ export class EmailNotVerifiedException extends ForbiddenException {
   }
 }
 
-export class PendingOtpException extends BadRequestException {
-  constructor() {
-    super('A verification code was already sent. Please check your email or wait for it to expire before requesting a new one');
+export class OtpResendCooldownException extends BadRequestException {
+  constructor(retryAfterSeconds: number) {
+    super({
+      message: `Please wait ${retryAfterSeconds} seconds before requesting a new verification code`,
+      code: 'OTP_COOLDOWN',
+    });
   }
 }
 
@@ -53,9 +56,7 @@ export class InvalidOrExpiredOtpException extends BadRequestException {
 
 export class MaxOtpAttemptsException extends BadRequestException {
   constructor() {
-    super(
-      'Maximum verification attempts exceeded. Please request a new code',
-    );
+    super('Maximum verification attempts exceeded. Please request a new code');
   }
 }
 

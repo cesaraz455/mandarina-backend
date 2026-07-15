@@ -116,9 +116,11 @@ With the server running, open **`http://localhost:3000/api/docs`** to browse and
 **Tips:**
 - Call `POST /auth/register` to create an account, then `POST /auth/verify-email` with the OTP sent to your inbox.
 - Call `POST /auth/login` to get an access token, then click **Authorize** in Swagger and paste it.
-- `POST /auth/refresh` reads the refresh token from the request body, not the Authorization header.
+- `POST /auth/refresh` reads the refresh token from an httpOnly cookie set at login, not from the body or the Authorization header.
 - `POST /auth/forgot-password` always returns 200 regardless of whether the email exists (anti-enumeration).
 - Swagger is disabled when `NODE_ENV=production`.
+
+For the full authentication flow (tokens, cookies, session rotation, security rationale), see **[AUTHENTICATION.md](./AUTHENTICATION.md)**.
 
 ---
 

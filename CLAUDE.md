@@ -20,6 +20,21 @@ This file provides context and guidance to Claude Code when working with this re
 
 ---
 
+## Authentication flow (read this before touching `modules/auth`)
+
+Full narrative version with sequence diagrams and rationale: **[AUTHENTICATION.md](./AUTHENTICATION.md)**. The summary an AI agent needs to hold in mind while editing this module:
+
+- **Two tokens, two transports.** The access JWT (15 min, `jwt.accessSecret`) is returned in the response body and sent back as `Authorization: Bearer <token>`. The refresh JWT (30 days, `jwt.refreshSecret`, rotated every use) is **never** in a JSON body — it only exists as the `refresh_token` httpOnly cookie (`src/modules/auth/refresh-cookie.util.ts`), scoped to `path: /api/v1/auth`. There is no mobile/token-in-body flow; that was removed when the client became a browser-only Vue 3 PWA. Do not reintroduce `refreshToken` into any response DTO.
+- **`sid` (session ID) is the join key.** Both tokens embed the same `sid`, generated up front in `login.use-case.ts` / `refresh-token.use-case.ts` and persisted on the `Session` row alongside the refresh token's SHA-256 hash. Logout and refresh both resolve "which session" via `sid`, never via the raw token value.
+- **`JwtRefreshStrategy` reads the cookie, not the body.** See `refreshTokenCookieExtractor` in `jwt-refresh.strategy.ts`. If you're wiring a new endpoint that needs the refresh token, extend that strategy's guard — don't add a `refreshToken` field to a DTO.
+- **Refresh token reuse is treated as a breach signal.** If a presented refresh token's hash doesn't match the session's stored hash, or the session is already revoked, `refresh-token.use-case.ts` revokes **every session for that user**, not just the one in question.
+- **Two anti-enumeration points**: `login.use-case.ts` throws the identical `InvalidCredentialsException` for "no such user" and "wrong password"; `forgot-password.use-case.ts` always returns 200. Do not add branches that would let a response distinguish these cases (timing, status code, or message).
+- **An unverified email at login auto-resends the OTP.** `login.use-case.ts` doesn't just reject with 403 — it issues and emails a fresh verification OTP first, then throws with `code: EMAIL_NOT_VERIFIED`. Keep that side effect in mind if you touch this path; it's intentional, not a leftover from `resend-verification`.
+- **A password reset invalidates every session.** `reset-password.use-case.ts` revokes all sessions for the user on success, by design (see `AUTHENTICATION.md`).
+- **`src/config/env.validation.ts` (Joi) is the single source of truth for env var defaults.** `configuration.ts` never repeats a default value; see the "Environment variables" section below.
+
+---
+
 ## Architecture
 
 The project follows a **layered architecture** with explicit separation of concerns:
@@ -90,11 +105,14 @@ THROTTLE_LIMIT=10
 THROTTLE_AUTH_LIMIT=5
 ```
 
+**`src/config/env.validation.ts` (Joi schema) is the single source of truth for defaults and required vars.** It validates `process.env` at startup and, for any variable that has a `.default(...)`, backfills `process.env` with that default before anything else reads it. `src/config/configuration.ts` never repeats a default: it only reads `process.env` and coerces types (e.g. `parseInt` for numbers). If you need to change a default, change it in `env.validation.ts` only.
+
 **Joi validation rules applied at startup:**
 - `DATABASE_URL`: valid URI, required
 - `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`: minimum 32 characters, required
 - `RESEND_API_KEY`: must start with `re_`, required
 - `EMAIL_FROM`: valid email format, required
+- Everything else (`PORT`, `APP_NAME`, `JWT_*_EXPIRES_IN`, `OTP_*`, `SESSION_EXPIRES_IN_DAYS`, `THROTTLE_*`) has a `.default(...)` in the schema and is optional.
 
 The app will refuse to start if any required variable is missing or invalid.
 
@@ -165,7 +183,7 @@ Only comment when the **why** is non-obvious: a hidden constraint, a subtle inva
 
 ## Quality standards
 
-- **No tests yet**: no test suite is configured. When added: Jest, mocked repositories for unit tests, Postgres in Docker for repository tests.
+- **Unit tests only (Jest)**: unit tests with mocked dependencies (see the auth cookie specs, e.g. `auth.controller.spec.ts`). Do not add E2E or integration/repository test suites.
 - **No dead code**: do not leave `_unused` variables, unused imports, or commented-out blocks.
 - **No premature abstractions**: add an abstraction only when there are three or more real usages.
 - **No unnecessary error handling**: do not catch exceptions that cannot occur. Trust framework guarantees.

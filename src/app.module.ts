@@ -30,7 +30,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     // Rate limiting: global guard applied below
     ThrottlerModule.forRoot([
       {
-        ttl: 60000,  // 1 minute
+        ttl: 60000, // 1 minute
         limit: 10,
       },
     ]),
@@ -65,9 +65,9 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     {
       provide: APP_PIPE,
       useValue: new ValidationPipe({
-        whitelist: true,        // strip unknown properties
+        whitelist: true, // strip unknown properties
         forbidNonWhitelisted: true, // throw on unknown properties
-        transform: true,        // auto-transform payloads to DTO instances
+        transform: true, // auto-transform payloads to DTO instances
         transformOptions: {
           enableImplicitConversion: true,
         },

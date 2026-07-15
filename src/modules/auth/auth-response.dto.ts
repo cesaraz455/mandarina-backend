@@ -13,13 +13,11 @@ export class UserProfileDto {
 
 export class AuthResponseDto {
   @ApiProperty() accessToken!: string;
-  @ApiProperty() refreshToken!: string;
   @ApiProperty({ type: UserProfileDto }) user!: UserProfileDto;
 }
 
 export class TokensResponseDto {
   @ApiProperty() accessToken!: string;
-  @ApiProperty() refreshToken!: string;
 }
 
 export class MessageResponseDto {

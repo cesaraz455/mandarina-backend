@@ -49,7 +49,10 @@ export class SessionsRepository {
     return this.toEntity(session);
   }
 
-  async updateRefreshTokenHash(id: string, refreshTokenHash: string): Promise<void> {
+  async updateRefreshTokenHash(
+    id: string,
+    refreshTokenHash: string,
+  ): Promise<void> {
     await this.prisma.userSession.update({
       where: { id },
       data: { refreshTokenHash },

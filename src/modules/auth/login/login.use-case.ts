@@ -66,11 +66,17 @@ export class LoginUseCase {
     }
 
     if (!user.isEmailVerified) {
-      const otp = await this.otpService.createOtp(user.id, OtpType.EMAIL_VERIFICATION);
+      const otp = await this.otpService.createOtp(
+        user.id,
+        OtpType.EMAIL_VERIFICATION,
+      );
       try {
         await this.emailService.sendEmailVerification(user.email, otp);
       } catch (error) {
-        this.logger.error(`Failed to send verification email to ${user.email}`, error);
+        this.logger.error(
+          `Failed to send verification email to ${user.email}`,
+          error,
+        );
       }
       throw new EmailNotVerifiedException();
     }
@@ -92,7 +98,10 @@ export class LoginUseCase {
       { sub: user.id, sid: sessionId },
       {
         secret: this.configService.getOrThrow<string>('jwt.refreshSecret'),
-        expiresIn: this.configService.get<string>('jwt.refreshExpiresIn', '30d'),
+        expiresIn: this.configService.get<string>(
+          'jwt.refreshExpiresIn',
+          '30d',
+        ),
       },
     );
 

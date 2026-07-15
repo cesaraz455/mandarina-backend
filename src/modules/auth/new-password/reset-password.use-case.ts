@@ -5,9 +5,7 @@ import { UsersService } from '../../users/users.service';
 import { OtpService } from '../../otp/otp.service';
 import { SessionsService } from '../../sessions/sessions.service';
 import { CryptoUtil } from '../../../common/utils/crypto.util';
-import {
-  InvalidOrExpiredOtpException,
-} from '../../../common/exceptions/auth.exceptions';
+import { InvalidOrExpiredOtpException } from '../../../common/exceptions/auth.exceptions';
 
 export interface ResetPasswordResult {
   message: string;

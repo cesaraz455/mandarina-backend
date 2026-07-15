@@ -13,6 +13,7 @@ import { LogoutUseCase } from './login/logout.use-case';
 import { ForgotPasswordUseCase } from './forgot-password/forgot-password.use-case';
 import { ResetPasswordUseCase } from './new-password/reset-password.use-case';
 import { ResendVerificationUseCase } from './resend-verification/resend-verification.use-case';
+import { VerifyResetOtpUseCase } from './verify-reset-otp/verify-reset-otp.use-case';
 import { UsersModule } from '../users/users.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { OtpModule } from '../otp/otp.module';
@@ -49,6 +50,7 @@ import { EmailModule } from '../email/email.module';
     ForgotPasswordUseCase,
     ResetPasswordUseCase,
     ResendVerificationUseCase,
+    VerifyResetOtpUseCase,
   ],
 })
 export class AuthModule {}

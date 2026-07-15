@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
 
 async function bootstrap(): Promise<void> {
@@ -16,7 +17,12 @@ async function bootstrap(): Promise<void> {
   // Global prefix
   app.setGlobalPrefix('api/v1');
 
-  // CORS: configure allowed origins for production
+  // Parse cookies so the jwt-refresh strategy can read the httpOnly refresh cookie.
+  app.use(cookieParser());
+
+  // CORS: reflect the origin in development (Vite dev server); in production the PWA
+  // is served same-site, so cross-origin is closed. credentials:true is required for
+  // the refresh cookie to travel on same-site requests.
   app.enableCors({
     origin: nodeEnv === 'production' ? false : true,
     credentials: true,

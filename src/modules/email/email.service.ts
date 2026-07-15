@@ -1,6 +1,11 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { Inject, Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 import { RESEND_CLIENT } from './providers/resend.provider';
@@ -19,7 +24,9 @@ export class EmailService {
     private readonly configService: ConfigService,
   ) {
     this.from = this.configService.getOrThrow<string>('email.from');
-    this.otpExpiresInMinutes = this.configService.getOrThrow<number>('otp.expiresInMinutes');
+    this.otpExpiresInMinutes = this.configService.getOrThrow<number>(
+      'otp.expiresInMinutes',
+    );
     this.verificationTemplate = readFileSync(
       join(__dirname, 'templates', 'email-verification.html'),
       'utf8',
