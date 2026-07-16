@@ -8,6 +8,9 @@ export interface CreateUserData {
   passwordHash?: string;
   firstName?: string;
   lastName?: string;
+  isEmailVerified?: boolean;
+  emailVerifiedAt?: Date;
+  profilePictureUrl?: string;
 }
 
 export interface UpdateUserData {
@@ -68,6 +71,9 @@ export class UsersRepository {
         passwordHash: data.passwordHash,
         firstName: data.firstName,
         lastName: data.lastName,
+        isEmailVerified: data.isEmailVerified,
+        emailVerifiedAt: data.emailVerifiedAt,
+        profilePictureUrl: data.profilePictureUrl,
       },
     });
     return this.toEntity(user);

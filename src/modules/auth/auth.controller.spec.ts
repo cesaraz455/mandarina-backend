@@ -6,11 +6,33 @@ import { UsersService } from '../users/users.service';
 import { REFRESH_COOKIE_NAME } from './refresh-cookie.util';
 import { JwtAccessPayload, JwtRefreshPayload } from './jwt-payload.interface';
 import { LoginDto } from './login/login.dto';
+import { GoogleProfile } from './google.strategy';
+import {
+  AccountInactiveException,
+  GoogleEmailNotVerifiedException,
+} from '../../common/exceptions/auth.exceptions';
 
-type MockedRes = Response & { cookie: jest.Mock; clearCookie: jest.Mock };
+type MockedRes = Response & {
+  cookie: jest.Mock;
+  clearCookie: jest.Mock;
+  redirect: jest.Mock;
+};
 
 const buildRes = (): MockedRes =>
-  ({ cookie: jest.fn(), clearCookie: jest.fn() }) as unknown as MockedRes;
+  ({
+    cookie: jest.fn(),
+    clearCookie: jest.fn(),
+    redirect: jest.fn(),
+  }) as unknown as MockedRes;
+
+const fakeGoogleProfile: GoogleProfile = {
+  googleId: 'google-sub-1',
+  email: 'a@b.com',
+  emailVerified: true,
+  firstName: 'Ada',
+  lastName: 'Lovelace',
+  picture: null,
+};
 
 const fakeUser = {
   id: 'u1',
@@ -29,6 +51,7 @@ describe('AuthController (cookie-based auth)', () => {
     login: jest.Mock;
     refreshToken: jest.Mock;
     logout: jest.Mock;
+    googleLogin: jest.Mock;
   };
 
   beforeEach(() => {
@@ -36,12 +59,17 @@ describe('AuthController (cookie-based auth)', () => {
       login: jest.fn(),
       refreshToken: jest.fn(),
       logout: jest.fn(),
+      googleLogin: jest.fn(),
     };
     const configService = {
       get: jest.fn((key: string, def?: unknown) => {
         if (key === 'nodeEnv') return 'development';
         if (key === 'session.expiresInDays') return 30;
         return def;
+      }),
+      getOrThrow: jest.fn((key: string) => {
+        if (key === 'frontendUrl') return 'http://localhost:5173';
+        throw new Error(`Unexpected getOrThrow key in test: ${key}`);
       }),
     };
     controller = new AuthController(
@@ -81,7 +109,9 @@ describe('AuthController (cookie-based auth)', () => {
       }),
     );
     expect(body).toEqual({ accessToken: 'access', user: fakeUser });
-    expect((body as Record<string, unknown>).refreshToken).toBeUndefined();
+    expect(
+      (body as unknown as Record<string, unknown>).refreshToken,
+    ).toBeUndefined();
   });
 
   it('login without rememberMe sets a session cookie (no maxAge)', async () => {
@@ -138,5 +168,88 @@ describe('AuthController (cookie-based auth)', () => {
       expect.objectContaining({ path: '/api/v1/auth', httpOnly: true }),
     );
     expect(body).toEqual({ message: 'Logged out' });
+  });
+
+  describe('googleCallback', () => {
+    const buildReq = (user?: GoogleProfile) =>
+      ({
+        user,
+        headers: {},
+        socket: { remoteAddress: '127.0.0.1' },
+      }) as unknown as Request & { user?: GoogleProfile };
+
+    it('sets the refresh cookie and redirects with the returned status', async () => {
+      authService.googleLogin.mockResolvedValue({
+        refreshToken: 'g-refresh',
+        status: 'created',
+      });
+      const res = buildRes();
+      const req = buildReq(fakeGoogleProfile);
+
+      await controller.googleCallback(req, res);
+
+      expect(authService.googleLogin).toHaveBeenCalledWith(
+        fakeGoogleProfile,
+        expect.objectContaining({ ipAddress: '127.0.0.1' }),
+      );
+      expect(res.cookie).toHaveBeenCalledWith(
+        REFRESH_COOKIE_NAME,
+        'g-refresh',
+        expect.objectContaining({ httpOnly: true, path: '/api/v1/auth' }),
+      );
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/auth/google/callback?status=created',
+      );
+    });
+
+    it('does nothing when GoogleOAuthGuard already redirected (no req.user)', async () => {
+      const res = buildRes();
+      const req = buildReq(undefined);
+
+      await controller.googleCallback(req, res);
+
+      expect(authService.googleLogin).not.toHaveBeenCalled();
+      expect(res.cookie).not.toHaveBeenCalled();
+      expect(res.redirect).not.toHaveBeenCalled();
+    });
+
+    it('maps GoogleEmailNotVerifiedException to ?error=email_not_verified', async () => {
+      authService.googleLogin.mockRejectedValue(
+        new GoogleEmailNotVerifiedException(),
+      );
+      const res = buildRes();
+      const req = buildReq(fakeGoogleProfile);
+
+      await controller.googleCallback(req, res);
+
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/auth/google/callback?error=email_not_verified',
+      );
+      expect(res.cookie).not.toHaveBeenCalled();
+    });
+
+    it('maps AccountInactiveException to ?error=account_inactive', async () => {
+      authService.googleLogin.mockRejectedValue(new AccountInactiveException());
+      const res = buildRes();
+      const req = buildReq(fakeGoogleProfile);
+
+      await controller.googleCallback(req, res);
+
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/auth/google/callback?error=account_inactive',
+      );
+    });
+
+    it('maps any other error to ?error=server_error', async () => {
+      authService.googleLogin.mockRejectedValue(new Error('boom'));
+      const res = buildRes();
+      const req = buildReq(fakeGoogleProfile);
+
+      await controller.googleCallback(req, res);
+
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/auth/google/callback?error=server_error',
+      );
+    });
   });
 });

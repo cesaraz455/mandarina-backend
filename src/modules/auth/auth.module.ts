@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { JwtRefreshStrategy } from './jwt-refresh.strategy';
+import { GoogleStrategy } from './google.strategy';
 import { RegisterUseCase } from './sign-up/register.use-case';
 import { VerifyEmailUseCase } from './otp-confirmation/verify-email.use-case';
 import { LoginUseCase } from './login/login.use-case';
@@ -14,10 +15,12 @@ import { ForgotPasswordUseCase } from './forgot-password/forgot-password.use-cas
 import { ResetPasswordUseCase } from './new-password/reset-password.use-case';
 import { ResendVerificationUseCase } from './resend-verification/resend-verification.use-case';
 import { VerifyResetOtpUseCase } from './verify-reset-otp/verify-reset-otp.use-case';
+import { GoogleLoginUseCase } from './google-login/google-login.use-case';
 import { UsersModule } from '../users/users.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { OtpModule } from '../otp/otp.module';
 import { EmailModule } from '../email/email.module';
+import { UserAuthAccountsModule } from '../user-auth-accounts/user-auth-accounts.module';
 
 /**
  * Architecture decision: JwtModule is configured without a default secret here.
@@ -33,12 +36,14 @@ import { EmailModule } from '../email/email.module';
     SessionsModule,
     OtpModule,
     EmailModule,
+    UserAuthAccountsModule,
   ],
   controllers: [AuthController],
   providers: [
     // Strategies
     JwtStrategy,
     JwtRefreshStrategy,
+    GoogleStrategy,
     // Facade
     AuthService,
     // Use Cases
@@ -51,6 +56,7 @@ import { EmailModule } from '../email/email.module';
     ResetPasswordUseCase,
     ResendVerificationUseCase,
     VerifyResetOtpUseCase,
+    GoogleLoginUseCase,
   ],
 })
 export class AuthModule {}

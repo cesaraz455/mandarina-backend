@@ -28,4 +28,11 @@ export const envValidationSchema = Joi.object({
   THROTTLE_TTL: Joi.number().default(60),
   THROTTLE_LIMIT: Joi.number().default(10),
   THROTTLE_AUTH_LIMIT: Joi.number().default(5),
+
+  GOOGLE_CLIENT_ID: Joi.string().required(),
+  GOOGLE_CLIENT_SECRET: Joi.string().required(),
+  GOOGLE_CALLBACK_URL: Joi.string().default(
+    'http://localhost:3000/api/v1/auth/google/callback',
+  ),
+  FRONTEND_URL: Joi.string().default('http://localhost:5173'),
 });

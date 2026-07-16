@@ -77,3 +77,15 @@ export class SessionExpiredException extends UnauthorizedException {
     super('Session has expired. Please log in again');
   }
 }
+
+export class GoogleEmailNotVerifiedException extends ForbiddenException {
+  constructor() {
+    super('Google account email is not verified');
+  }
+}
+
+export class AccountInactiveException extends ForbiddenException {
+  constructor() {
+    super('This account has been deactivated. Please contact support');
+  }
+}

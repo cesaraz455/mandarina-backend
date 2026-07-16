@@ -10,6 +10,7 @@ This file provides context and guidance to Claude Code when working with this re
 
 - User registration with email verification via OTP
 - Login with short-lived JWT access tokens + rotating refresh tokens
+- Sign-In with Google (OAuth 2.0 server-side redirect flow)
 - Logout and session revocation
 - Password recovery via OTP
 - Email verification resend
@@ -24,13 +25,14 @@ This file provides context and guidance to Claude Code when working with this re
 
 Full narrative version with sequence diagrams and rationale: **[AUTHENTICATION.md](./AUTHENTICATION.md)**. The summary an AI agent needs to hold in mind while editing this module:
 
-- **Two tokens, two transports.** The access JWT (15 min, `jwt.accessSecret`) is returned in the response body and sent back as `Authorization: Bearer <token>`. The refresh JWT (30 days, `jwt.refreshSecret`, rotated every use) is **never** in a JSON body — it only exists as the `refresh_token` httpOnly cookie (`src/modules/auth/refresh-cookie.util.ts`), scoped to `path: /api/v1/auth`. There is no mobile/token-in-body flow; that was removed when the client became a browser-only Vue 3 PWA. Do not reintroduce `refreshToken` into any response DTO.
+- **Two tokens, two transports.** The access JWT (15 min, `jwt.accessSecret`) is returned in the response body and sent back as `Authorization: Bearer <token>`. The refresh JWT (30 days, `jwt.refreshSecret`, rotated every use) is **never** in a JSON body — it only exists as the `refresh_token` httpOnly cookie (`src/modules/auth/refresh-cookie.util.ts`), scoped to `path: /api/v1/auth`. There is no mobile/token-in-body flow: the client is a browser-only Vue 3 PWA. Do not reintroduce `refreshToken` into any response DTO.
 - **`sid` (session ID) is the join key.** Both tokens embed the same `sid`, generated up front in `login.use-case.ts` / `refresh-token.use-case.ts` and persisted on the `Session` row alongside the refresh token's SHA-256 hash. Logout and refresh both resolve "which session" via `sid`, never via the raw token value.
 - **`JwtRefreshStrategy` reads the cookie, not the body.** See `refreshTokenCookieExtractor` in `jwt-refresh.strategy.ts`. If you're wiring a new endpoint that needs the refresh token, extend that strategy's guard — don't add a `refreshToken` field to a DTO.
 - **Refresh token reuse is treated as a breach signal.** If a presented refresh token's hash doesn't match the session's stored hash, or the session is already revoked, `refresh-token.use-case.ts` revokes **every session for that user**, not just the one in question.
 - **Two anti-enumeration points**: `login.use-case.ts` throws the identical `InvalidCredentialsException` for "no such user" and "wrong password"; `forgot-password.use-case.ts` always returns 200. Do not add branches that would let a response distinguish these cases (timing, status code, or message).
 - **An unverified email at login auto-resends the OTP.** `login.use-case.ts` doesn't just reject with 403 — it issues and emails a fresh verification OTP first, then throws with `code: EMAIL_NOT_VERIFIED`. Keep that side effect in mind if you touch this path; it's intentional, not a leftover from `resend-verification`.
 - **A password reset invalidates every session.** `reset-password.use-case.ts` revokes all sessions for the user on success, by design (see `AUTHENTICATION.md`).
+- **Google Sign-In reuses the same session machinery, it does not replace it.** `GoogleStrategy` (`google.strategy.ts`, via the `passport-google-oauth20` dependency) and `GoogleOAuthGuard` handle the OAuth redirect; `google-login/google-login.use-case.ts` finds-or-creates-links the user through `UserAuthAccountsService` (the `user_auth_accounts` table) and then mints the same sid/access/refresh token trio as `login.use-case.ts`. The callback endpoint never returns JSON: on success or failure it always redirects to `${FRONTEND_URL}/auth/google/callback` with a `?status=` or `?error=` query param, never a thrown HTTP error.
 - **`src/config/env.validation.ts` (Joi) is the single source of truth for env var defaults.** `configuration.ts` never repeats a default value; see the "Environment variables" section below.
 
 ---
@@ -73,7 +75,7 @@ The full schema is defined in `prisma/schema.prisma`. Refer to that file as the 
 Key security notes about the schema:
 - Passwords are stored as bcrypt hashes: never the raw value.
 - Refresh tokens are stored as SHA-256 hashes: the raw token only travels in the HTTP response.
-- `UserAuthAccount` is reserved for future OAuth/SSO support (Google, GitHub, etc.) and should not be removed.
+- `UserAuthAccount` links a user to an external identity provider account via a compound unique `(provider, providerUserId)` key. Google Sign-In (`src/modules/user-auth-accounts/`) is the first provider wired up; a future provider (GitHub, etc.) would follow the same `provider` string + `providerUserId` pattern.
 
 ---
 
@@ -103,6 +105,11 @@ RESEND_API_KEY=re_xxxxxxxxxxxx
 THROTTLE_TTL=60
 THROTTLE_LIMIT=10
 THROTTLE_AUTH_LIMIT=5
+
+GOOGLE_CLIENT_ID=xxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxx
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+FRONTEND_URL=http://localhost:5173
 ```
 
 **`src/config/env.validation.ts` (Joi schema) is the single source of truth for defaults and required vars.** It validates `process.env` at startup and, for any variable that has a `.default(...)`, backfills `process.env` with that default before anything else reads it. `src/config/configuration.ts` never repeats a default: it only reads `process.env` and coerces types (e.g. `parseInt` for numbers). If you need to change a default, change it in `env.validation.ts` only.
@@ -112,7 +119,8 @@ THROTTLE_AUTH_LIMIT=5
 - `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET`: minimum 32 characters, required
 - `RESEND_API_KEY`: must start with `re_`, required
 - `EMAIL_FROM`: valid email format, required
-- Everything else (`PORT`, `APP_NAME`, `JWT_*_EXPIRES_IN`, `OTP_*`, `SESSION_EXPIRES_IN_DAYS`, `THROTTLE_*`) has a `.default(...)` in the schema and is optional.
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: required, no default (the Google Cloud OAuth client must already exist; see `README.md`)
+- Everything else (`PORT`, `APP_NAME`, `JWT_*_EXPIRES_IN`, `OTP_*`, `SESSION_EXPIRES_IN_DAYS`, `THROTTLE_*`, `GOOGLE_CALLBACK_URL`, `FRONTEND_URL`) has a `.default(...)` in the schema and is optional.
 
 The app will refuse to start if any required variable is missing or invalid.
 

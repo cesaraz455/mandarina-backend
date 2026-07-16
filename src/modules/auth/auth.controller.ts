@@ -42,6 +42,12 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAccessPayload, JwtRefreshPayload } from './jwt-payload.interface';
 import { UsersService } from '../users/users.service';
+import { GoogleOAuthGuard } from './google-oauth.guard';
+import { GoogleProfile } from './google.strategy';
+import {
+  AccountInactiveException,
+  GoogleEmailNotVerifiedException,
+} from '../../common/exceptions/auth.exceptions';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -315,6 +321,81 @@ export class AuthController {
     @Body() dto: ResendVerificationDto,
   ): Promise<MessageResponseDto> {
     return this.authService.resendVerification(dto);
+  }
+
+  // ─── Google Sign-In ───────────────────────────────────────────────────────
+
+  @Public()
+  @Get('google')
+  @UseGuards(GoogleOAuthGuard)
+  @ApiOperation({
+    summary: 'Start Google Sign-In',
+    description:
+      'Redirects the browser to the Google OAuth consent screen. The client must ' +
+      'navigate here with a full-page load (not fetch/XHR); Google redirects back ' +
+      'to GET /auth/google/callback once the user approves or denies access.',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Redirect to the Google OAuth consent screen',
+  })
+  googleAuth(): void {
+    // Intentionally empty: GoogleOAuthGuard (via passport) redirects to Google
+    // before this handler body would ever run.
+  }
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(GoogleOAuthGuard)
+  @ApiOperation({
+    summary: 'Google Sign-In callback',
+    description:
+      'Exchanges the OAuth code, finds/creates/links the user by email, mints a ' +
+      'session and sets the refresh cookie exactly like POST /auth/login, then ' +
+      'redirects to `${FRONTEND_URL}/auth/google/callback?status=linked|created|login`. ' +
+      'On failure, redirects to the same route with ' +
+      '?error=access_denied|email_not_verified|account_inactive|server_error instead ' +
+      'of returning a JSON error, since this endpoint is only ever reached via a ' +
+      'browser redirect chain.',
+  })
+  @ApiResponse({
+    status: 302,
+    description:
+      'Redirect back to the PWA with a ?status= (success) or ?error= (failure) query param',
+  })
+  async googleCallback(
+    @Req() req: Request & { user?: GoogleProfile },
+    @Res() res: Response,
+  ): Promise<void> {
+    if (!req.user) {
+      // GoogleOAuthGuard already redirected with ?error=access_denied
+      return;
+    }
+
+    const frontendUrl = this.configService.getOrThrow<string>('frontendUrl');
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string | undefined) ??
+      req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    try {
+      const result = await this.authService.googleLogin(req.user, {
+        ipAddress,
+        userAgent,
+      });
+      this.setRefreshCookie(res, result.refreshToken, true);
+      res.redirect(
+        `${frontendUrl}/auth/google/callback?status=${result.status}`,
+      );
+    } catch (error) {
+      let errorCode = 'server_error';
+      if (error instanceof GoogleEmailNotVerifiedException) {
+        errorCode = 'email_not_verified';
+      } else if (error instanceof AccountInactiveException) {
+        errorCode = 'account_inactive';
+      }
+      res.redirect(`${frontendUrl}/auth/google/callback?error=${errorCode}`);
+    }
   }
 
   // ─── Me ───────────────────────────────────────────────────────────────────

@@ -28,7 +28,7 @@ The web client (`pwa/`) is a browser SPA, which means any token placed in `local
 
 The access token, by contrast, is short-lived and low blast-radius if leaked, so it is returned in the response body and held in memory by the client (never persisted), then sent as a normal `Authorization: Bearer` header.
 
-There is **no mobile/token-in-body flow** anymore — that was removed when the client migrated from the Expo app to the Vue 3 PWA. If a future native client needs auth, it will need its own strategy (cookies don't work the same way outside a browser); don't assume the current shape generalizes to non-browser clients.
+There is **no mobile/token-in-body flow**: the refresh token only exists as an httpOnly cookie. If a future native client needs auth, it will need its own strategy (cookies don't work the same way outside a browser); don't assume the current shape generalizes to non-browser clients.
 
 ## Flows
 
@@ -46,6 +46,22 @@ There is **no mobile/token-in-body flow** anymore — that was removed when the 
 2. If the account is deactivated → 403 `AccountNotActiveException`.
 3. If the email isn't verified yet, the use case **auto-issues a fresh OTP and emails it**, then throws 403 with `code: "EMAIL_NOT_VERIFIED"`. The client is expected to catch that code and route straight to the OTP-entry screen — the user doesn't have to separately call resend-verification.
 4. On success: a `sessionId` (UUID) is generated up front and embedded in both tokens, a `Session` row is persisted with the IP/user-agent and the refresh token's hash, and the controller sets the refresh cookie before returning `{ accessToken, user }`.
+
+### Google Sign-In
+
+Server-side redirect (Authorization Code) flow: the PWA never touches a client-side Google SDK or the client secret, so no CSP changes were needed on the frontend.
+
+`GET /auth/google` (`GoogleOAuthGuard`, wrapping Passport's `google` strategy, see `google.strategy.ts`): the PWA navigates here with a full-page load (not fetch/XHR), and the guard redirects the browser to Google's consent screen requesting the `email` and `profile` scopes. Google then redirects back to `GET /auth/google/callback?code=...`.
+
+`GET /auth/google/callback` (see `google-login/google-login.use-case.ts`):
+
+1. Passport exchanges the code for a Google profile and `google.strategy.ts` normalizes it to `{ googleId, email, emailVerified, firstName, lastName, picture }`. An unverified Google email is rejected (`GoogleEmailNotVerifiedException`): Google is the identity source of truth here, so an unverified address could let someone claim an inbox they don't control.
+2. **Find by provider first**: `UserAuthAccountsService.findByProvider('google', googleId)` looks up the `user_auth_accounts` table (unique on `provider` + `provider_user_id`, the Google `sub`). If found, this is a returning sign-in (`status: "login"`); an inactive account is rejected the same way as password login (`AccountInactiveException`).
+3. **Otherwise, find-or-create by email**: if a `users` row already exists with that email, a new `user_auth_accounts` row links it (`status: "linked"`), and the user is marked verified if it wasn't already (Google already verified the address). If no user exists at all, one is created with a null password hash, `isEmailVerified: true`, and the name/picture from the Google profile, then linked (`status: "created"`).
+4. The rest is identical to password login: a `sid` is generated, an access+refresh token pair is minted, the refresh token's SHA-256 hash is persisted on a new `Session` row with the caller's IP/user-agent, and `lastLoginAt` is updated.
+5. The controller sets the refresh cookie with the same `setRefreshCookie` helper `POST /auth/login` uses (`rememberMe: true`, since an OAuth flow has no separate "remember me" step), then redirects to `${FRONTEND_URL}/auth/google/callback?status=linked|created|login`. This endpoint never returns an access token in a body (there is no body on a redirect); the PWA rehydrates its session the same way a page reload does, via the existing refresh + `/auth/me` flow.
+
+On any failure the callback redirects instead of returning a JSON error, since the browser only reached this endpoint via a redirect chain and cannot render an API error response: `?error=access_denied` (consent denied or strategy failure, handled by `GoogleOAuthGuard.handleRequest`), `?error=email_not_verified`, `?error=account_inactive`, or `?error=server_error` for anything unexpected. `GOOGLE_CLIENT_SECRET` is only ever used server-side, in the code-for-token exchange Passport performs; it never reaches the browser.
 
 ### Using the API
 
@@ -110,9 +126,4 @@ Browser                          API                              DB
 | CSRF defense | `sameSite: strict` on the refresh cookie, no separate CSRF token needed |
 | Password/OTP storage | bcrypt (12 rounds for passwords, 10 for OTPs); refresh tokens stored as SHA-256 hashes |
 | Rate limiting | Per-endpoint `@Throttle()`, tightest on `login`/`register`/`forgot-password`/`resend-verification` |
-
-## Related documentation
-
-- `CLAUDE.md` — architecture, layering, conventions, and the "AI agent" guidance for this backend.
-- Swagger UI (`/api/docs`, non-production only) — authoritative request/response schemas for every endpoint.
-- `prisma/schema.prisma` — the `User`, `Session`, and `Otp` models referenced throughout this document.
+| Google Sign-In trust boundary | Rejects unverified Google emails; consent-denied and failures redirect to the PWA instead of a JSON error (`GoogleOAuthGuard`, `google-login.use-case.ts`) |

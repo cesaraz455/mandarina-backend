@@ -52,8 +52,14 @@ The required variables are:
 | `JWT_REFRESH_SECRET` | Secret for signing refresh tokens (min 32 chars) |
 | `RESEND_API_KEY` | Resend API key (starts with `re_`) |
 | `EMAIL_FROM` | Sender address for outgoing emails |
+| `GOOGLE_CLIENT_ID` | Google OAuth 2.0 client ID, for Sign-In with Google |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth 2.0 client secret |
+| `GOOGLE_CALLBACK_URL` | OAuth redirect URI registered in Google Cloud (defaults to `http://localhost:3000/api/v1/auth/google/callback`) |
+| `FRONTEND_URL` | Base URL of the PWA; the Google callback redirects here (defaults to `http://localhost:5173`) |
 
 See `.env.example` for the full list with defaults.
+
+To get a Google client ID/secret: create an OAuth 2.0 Client ID (Web application) in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) and add your `GOOGLE_CALLBACK_URL` value as an authorized redirect URI.
 
 ### 3. Run database migrations
 

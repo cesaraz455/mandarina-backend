@@ -8,6 +8,10 @@ import { ForgotPasswordUseCase } from './forgot-password/forgot-password.use-cas
 import { ResetPasswordUseCase } from './new-password/reset-password.use-case';
 import { ResendVerificationUseCase } from './resend-verification/resend-verification.use-case';
 import { VerifyResetOtpUseCase } from './verify-reset-otp/verify-reset-otp.use-case';
+import {
+  GoogleLoginUseCase,
+  GoogleLoginContext,
+} from './google-login/google-login.use-case';
 import { RegisterDto } from './sign-up/register.dto';
 import { LoginDto } from './login/login.dto';
 import { VerifyEmailDto } from './otp-confirmation/verify-email.dto';
@@ -15,6 +19,7 @@ import { ForgotPasswordDto } from './forgot-password/forgot-password.dto';
 import { ResetPasswordDto } from './new-password/reset-password.dto';
 import { ResendVerificationDto } from './resend-verification/resend-verification.dto';
 import { VerifyResetOtpDto } from './verify-reset-otp/verify-reset-otp.dto';
+import { GoogleProfile } from './google.strategy';
 
 /**
  * AuthService acts as a facade over the use-case layer.
@@ -35,6 +40,7 @@ export class AuthService {
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly resendVerificationUseCase: ResendVerificationUseCase,
     private readonly verifyResetOtpUseCase: VerifyResetOtpUseCase,
+    private readonly googleLoginUseCase: GoogleLoginUseCase,
   ) {}
 
   register(dto: RegisterDto) {
@@ -75,5 +81,9 @@ export class AuthService {
 
   verifyResetOtp(dto: VerifyResetOtpDto) {
     return this.verifyResetOtpUseCase.execute(dto);
+  }
+
+  googleLogin(profile: GoogleProfile, ctx: GoogleLoginContext) {
+    return this.googleLoginUseCase.execute(profile, ctx);
   }
 }
