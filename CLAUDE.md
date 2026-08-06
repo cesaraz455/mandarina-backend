@@ -169,7 +169,7 @@ Always use the typed exceptions from `src/common/exceptions/auth.exceptions.ts`.
 
 ### Comments
 
-Only comment when the **why** is non-obvious: a hidden constraint, a subtle invariant, a workaround, an architectural decision. Do not comment what the code does. Avoid emojis, special characters, and the em dash (—) in comments and documentation.
+Only comment when the **why** is non-obvious: a hidden constraint, a subtle invariant, a workaround, an architectural decision. Do not comment what the code does. Always write comments in English, regardless of the surrounding language. Avoid emojis, special characters, and the em dash (—) in comments and documentation.
 
 ---
 
@@ -191,7 +191,7 @@ Only comment when the **why** is non-obvious: a hidden constraint, a subtle inva
 
 ## Quality standards
 
-- **Unit tests only (Jest)**: unit tests with mocked dependencies (see the auth cookie specs, e.g. `auth.controller.spec.ts`). Do not add E2E or integration/repository test suites.
+- **Unit tests only (Jest), colocated as `*.test.ts`**: unit tests with mocked dependencies (see the auth cookie tests, e.g. `auth.controller.test.ts`). Do not add E2E or integration/repository test suites.
 - **No dead code**: do not leave `_unused` variables, unused imports, or commented-out blocks.
 - **No premature abstractions**: add an abstraction only when there are three or more real usages.
 - **No unnecessary error handling**: do not catch exceptions that cannot occur. Trust framework guarantees.
