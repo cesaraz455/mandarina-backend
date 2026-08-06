@@ -27,11 +27,14 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
       },
     }),
 
-    // Rate limiting: global guard applied below
+    // Rate limiting: global guard applied below. Skipped under NODE_ENV=test so
+    // e2e suites (which legitimately hit auth endpoints far more than 5-10x/min)
+    // aren't throttled; NODE_ENV=test is never used in a real deployment.
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute
         limit: 10,
+        skipIf: () => process.env.NODE_ENV === 'test',
       },
     ]),
 
