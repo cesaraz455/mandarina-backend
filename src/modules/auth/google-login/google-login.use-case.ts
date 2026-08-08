@@ -1,13 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { v4 as uuidv4 } from 'uuid';
 import { UsersService } from '../../users/users.service';
-import { SessionsService } from '../../sessions/sessions.service';
 import { UserAuthAccountsService } from '../../user-auth-accounts/user-auth-accounts.service';
-import { CryptoUtil } from '../../../common/utils/crypto.util';
 import { UserEntity } from '../../users/entities/user.entity';
 import { GoogleProfile } from '../google.strategy';
+import { SessionIssuerService } from '../session-issuer.service';
 import {
   GoogleEmailNotVerifiedException,
   AccountInactiveException,
@@ -31,10 +27,8 @@ export interface GoogleLoginContext {
 export class GoogleLoginUseCase {
   constructor(
     private readonly usersService: UsersService,
-    private readonly sessionsService: SessionsService,
     private readonly userAuthAccountsService: UserAuthAccountsService,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
+    private readonly sessionIssuer: SessionIssuerService,
   ) {}
 
   async execute(
@@ -97,37 +91,10 @@ export class GoogleLoginUseCase {
       }
     }
 
-    // 3. Pre-generate sessionId, exactly like login.use-case.ts. Only the refresh
-    // token is minted: this flow always ends in a redirect (no JSON body to carry
-    // an access token), the PWA rehydrates via the existing refresh + me flow.
-    const sessionId = uuidv4();
-    const expiresAt = this.sessionsService.getSessionExpiresAt();
-
-    const refreshToken = this.jwtService.sign(
-      { sub: user.id, sid: sessionId },
-      {
-        secret: this.configService.getOrThrow<string>('jwt.refreshSecret'),
-        expiresIn: this.configService.get<string>(
-          'jwt.refreshExpiresIn',
-          '30d',
-        ),
-      },
-    );
-
-    // 4. Persist session with pre-generated ID and hashed refresh token
-    const refreshTokenHash = CryptoUtil.hashToken(refreshToken);
-
-    await this.sessionsService.create({
-      id: sessionId,
-      userId: user.id,
-      refreshTokenHash,
-      ipAddress: ctx.ipAddress,
-      userAgent: ctx.userAgent,
-      expiresAt,
-    });
-
-    // 5. Track last login
-    await this.usersService.update(user.id, { lastLoginAt: new Date() });
+    // 3. Mint the session. Only the refresh token is used: this flow always
+    // ends in a redirect (no JSON body to carry an access token), the PWA
+    // rehydrates via the existing refresh + me flow.
+    const { refreshToken } = await this.sessionIssuer.issue(user, ctx);
 
     return { refreshToken, status };
   }

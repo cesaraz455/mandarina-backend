@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { RegisterUseCase } from './sign-up/register.use-case';
 import { VerifyEmailUseCase } from './otp-confirmation/verify-email.use-case';
 import { LoginUseCase } from './login/login.use-case';
+import {
+  LoginByUserIdUseCase,
+  LoginByUserIdContext,
+} from './login/login-by-user-id.use-case';
 import { RefreshTokenUseCase } from './login/refresh-token.use-case';
 import { LogoutUseCase } from './login/logout.use-case';
 import { ForgotPasswordUseCase } from './forgot-password/forgot-password.use-case';
@@ -34,6 +38,7 @@ export class AuthService {
     private readonly registerUseCase: RegisterUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
     private readonly loginUseCase: LoginUseCase,
+    private readonly loginByUserIdUseCase: LoginByUserIdUseCase,
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
@@ -53,6 +58,10 @@ export class AuthService {
 
   login(dto: LoginDto, ipAddress?: string, userAgent?: string) {
     return this.loginUseCase.execute(dto, ipAddress, userAgent);
+  }
+
+  loginByUserId(userId: string, ctx: LoginByUserIdContext) {
+    return this.loginByUserIdUseCase.execute(userId, ctx);
   }
 
   refreshToken(input: {

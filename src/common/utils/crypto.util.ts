@@ -30,7 +30,7 @@ export class CryptoUtil {
 
   /**
    * Hashes an OTP using bcrypt.
-   * OTPs are short (6 digits), so bcrypt prevents trivial lookup.
+   * OTPs are short (4 digits), so bcrypt prevents trivial lookup.
    */
   static hashOtp(otp: string): Promise<string> {
     return bcrypt.hash(otp, OTP_SALT_ROUNDS);
@@ -44,9 +44,9 @@ export class CryptoUtil {
   }
 
   /**
-   * Generates a cryptographically secure 6-digit OTP.
+   * Generates a cryptographically secure 4-digit OTP.
    */
   static generateOtp(): string {
-    return randomInt(100000, 1000000).toString();
+    return randomInt(1000, 10000).toString();
   }
 }

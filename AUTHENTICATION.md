@@ -34,7 +34,7 @@ There is **no mobile/token-in-body flow**: the refresh token only exists as an h
 
 ### Register → verify email
 
-1. `POST /auth/register` creates the user (`isEmailVerified: false`) and a 6-digit OTP (bcrypt-hashed, `OtpType.EMAIL_VERIFICATION`), emailed via Resend.
+1. `POST /auth/register` creates the user (`isEmailVerified: false`) and a 4-digit OTP (bcrypt-hashed, `OtpType.EMAIL_VERIFICATION`), emailed via Resend.
 2. Email delivery is **best-effort**: if Resend fails, the account is still created and the error is logged, not thrown. The client should offer "resend code" (`POST /auth/resend-verification`) as the recovery path.
 3. `POST /auth/verify-email` checks the OTP (bcrypt compare, max 3 attempts, `OTP_EXPIRES_IN_MINUTES`) and flips `isEmailVerified: true`.
 

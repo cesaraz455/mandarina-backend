@@ -9,6 +9,7 @@ import { GoogleStrategy } from './google.strategy';
 import { RegisterUseCase } from './sign-up/register.use-case';
 import { VerifyEmailUseCase } from './otp-confirmation/verify-email.use-case';
 import { LoginUseCase } from './login/login.use-case';
+import { LoginByUserIdUseCase } from './login/login-by-user-id.use-case';
 import { RefreshTokenUseCase } from './login/refresh-token.use-case';
 import { LogoutUseCase } from './login/logout.use-case';
 import { ForgotPasswordUseCase } from './forgot-password/forgot-password.use-case';
@@ -16,6 +17,7 @@ import { ResetPasswordUseCase } from './new-password/reset-password.use-case';
 import { ResendVerificationUseCase } from './resend-verification/resend-verification.use-case';
 import { VerifyResetOtpUseCase } from './verify-reset-otp/verify-reset-otp.use-case';
 import { GoogleLoginUseCase } from './google-login/google-login.use-case';
+import { SessionIssuerService } from './session-issuer.service';
 import { UsersModule } from '../users/users.module';
 import { SessionsModule } from '../sessions/sessions.module';
 import { OtpModule } from '../otp/otp.module';
@@ -46,10 +48,13 @@ import { UserAuthAccountsModule } from '../user-auth-accounts/user-auth-accounts
     GoogleStrategy,
     // Facade
     AuthService,
+    // Shared helper
+    SessionIssuerService,
     // Use Cases
     RegisterUseCase,
     VerifyEmailUseCase,
     LoginUseCase,
+    LoginByUserIdUseCase,
     RefreshTokenUseCase,
     LogoutUseCase,
     ForgotPasswordUseCase,

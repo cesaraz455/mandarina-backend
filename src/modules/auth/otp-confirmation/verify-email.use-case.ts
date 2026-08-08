@@ -7,6 +7,10 @@ import { InvalidOrExpiredOtpException } from '../../../common/exceptions/auth.ex
 
 export interface VerifyEmailResult {
   message: string;
+  // Present only when this call just verified the email (not when it was
+  // already verified beforehand). The controller uses it to trigger a
+  // separate auto-login step; it is not this use case's responsibility.
+  userId?: string;
 }
 
 @Injectable()
@@ -25,6 +29,11 @@ export class VerifyEmailUseCase {
     }
 
     if (user.isEmailVerified) {
+      // No OTP is checked on this branch (the original one may already be used
+      // or expired), so we must not report a fresh verification here: that
+      // would let the controller auto-login anyone who posts an already
+      // verified email with a throwaway OTP. The client falls back to a
+      // normal login for this case.
       return { message: 'Email is already verified.' };
     }
 
@@ -35,12 +44,14 @@ export class VerifyEmailUseCase {
       dto.otp,
     );
 
-    // Mark user as verified
-    await this.usersService.update(user.id, {
+    const verifiedUser = await this.usersService.update(user.id, {
       isEmailVerified: true,
       emailVerifiedAt: new Date(),
     });
 
-    return { message: 'Email verified successfully. You can now log in.' };
+    return {
+      message: 'Email verified successfully.',
+      userId: verifiedUser.id,
+    };
   }
 }

@@ -1,9 +1,8 @@
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { GoogleLoginUseCase } from './google-login.use-case';
 import { UsersService } from '../../users/users.service';
-import { SessionsService } from '../../sessions/sessions.service';
 import { UserAuthAccountsService } from '../../user-auth-accounts/user-auth-accounts.service';
+import { SessionIssuerService } from '../session-issuer.service';
 import { UserEntity } from '../../users/entities/user.entity';
 import { UserAuthAccountEntity } from '../../user-auth-accounts/entities/user-auth-account.entity';
 import { GoogleProfile } from '../google.strategy';
@@ -52,50 +51,40 @@ const googleProfile: GoogleProfile = {
 
 describe('GoogleLoginUseCase', () => {
   let usersService: {
-    findById: jest.Mock;
-    findByEmail: jest.Mock;
-    create: jest.Mock;
-    update: jest.Mock;
-  };
-  let sessionsService: {
-    create: jest.Mock;
-    getSessionExpiresAt: jest.Mock;
+    findById: jest.Mock<UsersService['findById']>;
+    findByEmail: jest.Mock<UsersService['findByEmail']>;
+    create: jest.Mock<UsersService['create']>;
+    update: jest.Mock<UsersService['update']>;
   };
   let userAuthAccountsService: {
-    findByProvider: jest.Mock;
+    findByProvider: jest.Mock<UserAuthAccountsService['findByProvider']>;
     link: jest.Mock;
   };
-  let jwtService: { sign: jest.Mock };
-  let configService: { getOrThrow: jest.Mock; get: jest.Mock };
+  let sessionIssuer: { issue: jest.Mock };
   let useCase: GoogleLoginUseCase;
 
   beforeEach(() => {
     usersService = {
-      findById: jest.fn(),
-      findByEmail: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    };
-    sessionsService = {
-      create: jest.fn(),
-      getSessionExpiresAt: jest.fn(() => new Date('2026-02-01T00:00:00.000Z')),
+      findById: jest.fn<UsersService['findById']>(),
+      findByEmail: jest.fn<UsersService['findByEmail']>(),
+      create: jest.fn<UsersService['create']>(),
+      update: jest.fn<UsersService['update']>(),
     };
     userAuthAccountsService = {
-      findByProvider: jest.fn(),
+      findByProvider: jest.fn<UserAuthAccountsService['findByProvider']>(),
       link: jest.fn(),
     };
-    jwtService = { sign: jest.fn(() => 'signed.jwt.token') };
-    configService = {
-      getOrThrow: jest.fn(() => 'a'.repeat(32)),
-      get: jest.fn((_key: string, def?: unknown) => def),
+    sessionIssuer = {
+      issue: jest.fn(() => ({
+        accessToken: 'signed.jwt.token',
+        refreshToken: 'signed.jwt.token',
+      })),
     };
 
     useCase = new GoogleLoginUseCase(
       usersService as unknown as UsersService,
-      sessionsService as unknown as SessionsService,
       userAuthAccountsService as unknown as UserAuthAccountsService,
-      jwtService as unknown as JwtService,
-      configService as unknown as ConfigService,
+      sessionIssuer as unknown as SessionIssuerService,
     );
   });
 
@@ -104,12 +93,9 @@ describe('GoogleLoginUseCase', () => {
     const user = buildUser();
     userAuthAccountsService.findByProvider.mockResolvedValue(account);
     usersService.findById.mockResolvedValue(user);
-    usersService.update.mockResolvedValue(user);
 
-    const result = await useCase.execute(googleProfile, {
-      ipAddress: '127.0.0.1',
-      userAgent: 'jest',
-    });
+    const ctx = { ipAddress: '127.0.0.1', userAgent: 'jest' };
+    const result = await useCase.execute(googleProfile, ctx);
 
     expect(result.status).toBe('login');
     expect(result.refreshToken).toBe('signed.jwt.token');
@@ -119,25 +105,7 @@ describe('GoogleLoginUseCase', () => {
     );
     expect(userAuthAccountsService.link).not.toHaveBeenCalled();
     expect(usersService.create).not.toHaveBeenCalled();
-
-    expect(sessionsService.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'u1',
-        ipAddress: '127.0.0.1',
-        userAgent: 'jest',
-      }),
-    );
-    // The refresh token must never be stored raw: assert a SHA-256 hex digest, not the token.
-    const sessionArg = sessionsService.create.mock.calls[0][0] as {
-      refreshTokenHash: string;
-    };
-    expect(sessionArg.refreshTokenHash).not.toBe('signed.jwt.token');
-    expect(sessionArg.refreshTokenHash).toMatch(/^[a-f0-9]{64}$/);
-
-    expect(usersService.update).toHaveBeenCalledWith(
-      user.id,
-      expect.objectContaining({ lastLoginAt: expect.any(Date) }),
-    );
+    expect(sessionIssuer.issue).toHaveBeenCalledWith(user, ctx);
   });
 
   it('links the Google account to an existing unverified user and marks it verified', async () => {
@@ -163,24 +131,19 @@ describe('GoogleLoginUseCase', () => {
       }),
     );
     expect(usersService.create).not.toHaveBeenCalled();
-    expect(sessionsService.create).toHaveBeenCalled();
+    expect(sessionIssuer.issue).toHaveBeenCalledWith(verifiedUser, {});
   });
 
   it('links an already-verified existing user without re-verifying it', async () => {
     userAuthAccountsService.findByProvider.mockResolvedValue(null);
     const existingUser = buildUser({ isEmailVerified: true });
     usersService.findByEmail.mockResolvedValue(existingUser);
-    usersService.update.mockResolvedValue(existingUser);
 
     const result = await useCase.execute(googleProfile, {});
 
     expect(result.status).toBe('linked');
-    expect(usersService.update).not.toHaveBeenCalledWith(
-      existingUser.id,
-      expect.objectContaining({ isEmailVerified: true }),
-    );
-    // Still called once, for lastLoginAt.
-    expect(usersService.update).toHaveBeenCalledTimes(1);
+    expect(usersService.update).not.toHaveBeenCalled();
+    expect(sessionIssuer.issue).toHaveBeenCalledWith(existingUser, {});
   });
 
   it('creates a new user and links it when no account or email match exists', async () => {
@@ -188,7 +151,6 @@ describe('GoogleLoginUseCase', () => {
     usersService.findByEmail.mockResolvedValue(null);
     const newUser = buildUser({ id: 'u2' });
     usersService.create.mockResolvedValue(newUser);
-    usersService.update.mockResolvedValue(newUser);
 
     const result = await useCase.execute(googleProfile, {});
 
@@ -208,7 +170,7 @@ describe('GoogleLoginUseCase', () => {
       provider: 'google',
       providerUserId: googleProfile.googleId,
     });
-    expect(sessionsService.create).toHaveBeenCalled();
+    expect(sessionIssuer.issue).toHaveBeenCalledWith(newUser, {});
   });
 
   it('rejects an unverified Google email before touching the database', async () => {
@@ -232,6 +194,6 @@ describe('GoogleLoginUseCase', () => {
     await expect(useCase.execute(googleProfile, {})).rejects.toThrow(
       AccountInactiveException,
     );
-    expect(sessionsService.create).not.toHaveBeenCalled();
+    expect(sessionIssuer.issue).not.toHaveBeenCalled();
   });
 });

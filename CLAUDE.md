@@ -178,7 +178,7 @@ Only comment when the **why** is non-obvious: a hidden constraint, a subtle inva
 | Concern | Implementation |
 |---|---|
 | Passwords | bcrypt, 12 salt rounds |
-| OTPs | bcrypt, 10 salt rounds (prevents lookup tables on 6-digit codes) |
+| OTPs | bcrypt, 10 salt rounds (prevents lookup tables on 4-digit codes) |
 | Refresh tokens | UUID v4 raw: stored as SHA-256 hash in DB; raw token only in the HTTP response |
 | Access tokens | Signed JWT, expires in 15 min |
 | Refresh tokens | Signed JWT, expires in 30 days; rotated on every use |

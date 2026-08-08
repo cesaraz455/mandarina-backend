@@ -18,10 +18,10 @@ export class ResetPasswordDto {
   @Transform(({ value }: { value: string }) => value?.toLowerCase().trim())
   email!: string;
 
-  @ApiProperty({ example: '123456', description: '6-digit reset code' })
+  @ApiProperty({ example: '1234', description: '4-digit reset code' })
   @IsString()
   @IsNotEmpty()
-  @Length(6, 6, { message: 'OTP must be exactly 6 digits' })
+  @Length(4, 4, { message: 'OTP must be exactly 4 digits' })
   otp!: string;
 
   @ApiProperty({ example: 'NewSecureP@ssw0rd' })

@@ -32,6 +32,7 @@ import {
   MessageResponseDto,
   TokensResponseDto,
   UserProfileDto,
+  VerifyEmailResponseDto,
 } from './auth-response.dto';
 import {
   REFRESH_COOKIE_NAME,
@@ -85,7 +86,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'Register a new user account',
     description:
-      'Creates the account and sends a 6-digit OTP to the given email for verification. ' +
+      'Creates the account and sends a 4-digit OTP to the given email for verification. ' +
       'If email delivery fails the account is still created (best-effort email); the client ' +
       'should fall back to POST /auth/resend-verification. Rate limit: 5 requests/min.',
   })
@@ -107,17 +108,47 @@ export class AuthController {
     summary: 'Verify email address with OTP',
     description:
       'Confirms the OTP sent during registration or resend-verification and activates ' +
-      'the account. Rate limit: 10 requests/min.',
+      'the account. On success this also logs the user in exactly like POST /auth/login ' +
+      '(access token in the body, refresh token set as the httpOnly cookie), so the ' +
+      'client can go straight to the app without a separate login step. If the email was ' +
+      'already verified beforehand, no session is minted (see VerifyEmailResponseDto) and ' +
+      'the client should fall back to a normal login. Rate limit: 10 requests/min.',
   })
-  @ApiResponse({ status: 200, type: MessageResponseDto })
+  @ApiResponse({ status: 200, type: VerifyEmailResponseDto })
   @ApiResponse({
     status: 400,
     description:
       'OTP is invalid, expired, or the maximum number of attempts was exceeded',
   })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
-  verifyEmail(@Body() dto: VerifyEmailDto): Promise<MessageResponseDto> {
-    return this.authService.verifyEmail(dto);
+  async verifyEmail(
+    @Body() dto: VerifyEmailDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<VerifyEmailResponseDto> {
+    const result = await this.authService.verifyEmail(dto);
+
+    if (!result.userId) {
+      return { message: result.message };
+    }
+
+    // Auto-login: verification only confirms the email, so the session is
+    // minted separately here via the same mechanism as POST /auth/login.
+    const ipAddress =
+      (req.headers['x-forwarded-for'] as string | undefined) ??
+      req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    const session = await this.authService.loginByUserId(result.userId, {
+      ipAddress,
+      userAgent,
+    });
+    this.setRefreshCookie(res, session.refreshToken, true);
+
+    return {
+      message: result.message,
+      accessToken: session.accessToken,
+      user: session.user,
+    };
   }
 
   // ─── Login ────────────────────────────────────────────────────────────────

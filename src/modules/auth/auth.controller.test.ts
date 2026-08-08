@@ -1,3 +1,4 @@
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { AuthController } from './auth.controller';
@@ -48,18 +49,18 @@ const fakeUser = {
 describe('AuthController (cookie-based auth)', () => {
   let controller: AuthController;
   let authService: {
-    login: jest.Mock;
-    refreshToken: jest.Mock;
-    logout: jest.Mock;
-    googleLogin: jest.Mock;
+    login: jest.Mock<AuthService['login']>;
+    refreshToken: jest.Mock<AuthService['refreshToken']>;
+    logout: jest.Mock<AuthService['logout']>;
+    googleLogin: jest.Mock<AuthService['googleLogin']>;
   };
 
   beforeEach(() => {
     authService = {
-      login: jest.fn(),
-      refreshToken: jest.fn(),
-      logout: jest.fn(),
-      googleLogin: jest.fn(),
+      login: jest.fn<AuthService['login']>(),
+      refreshToken: jest.fn<AuthService['refreshToken']>(),
+      logout: jest.fn<AuthService['logout']>(),
+      googleLogin: jest.fn<AuthService['googleLogin']>(),
     };
     const configService = {
       get: jest.fn((key: string, def?: unknown) => {
