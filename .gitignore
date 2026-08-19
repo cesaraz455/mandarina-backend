@@ -10,7 +10,6 @@ dist/
 .env.*.local
 
 # Prisma
-prisma/migrations/**/migration.sql
 prisma.config.js
 prisma.config.js.map
 prisma.config.d.ts

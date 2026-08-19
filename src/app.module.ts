@@ -11,6 +11,7 @@ import { UsersModule } from './modules/users/users.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
 import { OtpModule } from './modules/otp/otp.module';
 import { EmailModule } from './modules/email/email.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -46,6 +47,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     SessionsModule,
     OtpModule,
     EmailModule,
+    CategoriesModule,
     AuthModule,
   ],
   providers: [

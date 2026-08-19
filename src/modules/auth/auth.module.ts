@@ -23,6 +23,7 @@ import { SessionsModule } from '../sessions/sessions.module';
 import { OtpModule } from '../otp/otp.module';
 import { EmailModule } from '../email/email.module';
 import { UserAuthAccountsModule } from '../user-auth-accounts/user-auth-accounts.module';
+import { CategoriesModule } from '../categories/categories.module';
 
 /**
  * Architecture decision: JwtModule is configured without a default secret here.
@@ -39,6 +40,7 @@ import { UserAuthAccountsModule } from '../user-auth-accounts/user-auth-accounts
     OtpModule,
     EmailModule,
     UserAuthAccountsModule,
+    CategoriesModule,
   ],
   controllers: [AuthController],
   providers: [

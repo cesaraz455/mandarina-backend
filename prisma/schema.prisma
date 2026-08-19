@@ -11,6 +11,11 @@ enum OtpType {
   PASSWORD_RESET
 }
 
+enum CategoryType {
+  EXPENSE
+  INCOME
+}
+
 model User {
   id                String    @id @default(uuid()) @db.Uuid
   email             String    @unique @db.VarChar(255)
@@ -28,6 +33,7 @@ model User {
   sessions     UserSession[]
   otps         UserOtp[]
   authAccounts UserAuthAccount[]
+  categories   Category[]
 
   @@map("users")
 }
@@ -76,4 +82,22 @@ model UserOtp {
 
   @@index([userId, type])
   @@map("user_otps")
+}
+
+model Category {
+  id         String       @id @default(uuid()) @db.Uuid
+  userId     String       @map("user_id") @db.Uuid
+  type       CategoryType
+  name       String       @db.VarChar(100)
+  icon       String       @db.VarChar(50)
+  color      String       @db.VarChar(20)
+  isArchived Boolean      @default(false) @map("is_archived")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, name])
+  @@index([userId])
+  @@map("categories")
 }
